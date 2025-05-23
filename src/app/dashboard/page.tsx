@@ -8,14 +8,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import Link from 'next/link';
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import Image from "next/image";
 import { CheckIcon, ChevronLeft, ChevronRight, X, HelpCircle, Bell, Settings, FileText, BarChart2, MapPin, User, Mail, Download, Globe, Gavel, BookOpen, Truck, ClipboardCheck, Shield, CreditCard, MessageCircle, LogOut } from "lucide-react";
 import "leaflet/dist/leaflet.css";
-import Link from 'next/link';
 import { useRouter } from "next/navigation";
+import dynamic from 'next/dynamic';
+
+const MapWithNoSSR = dynamic(() => import('@/components/MapComponent'), {
+  ssr: false,
+});
+
 
 const stepDetails = [
   {
@@ -197,7 +202,7 @@ export default function Dashboard() {
   const [toastMsg, setToastMsg] = useState("");
   const [activeTab, setActiveTab] = useState("operations");
   const [chatOpen, setChatOpen] = useState(false);
-  const [user, setUser] = useState({ name: "test user", email: "test.user@mawadaexportech.com" });
+  const [user, setUser] = useState({ name: "test", email: "test.user@mawadaexportech.com" });
   const router = useRouter();
 
   const currentStep = stepDetails[step];
@@ -239,12 +244,13 @@ export default function Dashboard() {
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <Link href="/" className="flex items-center">
-              <Globe className="h-6 w-6 text-blue-600 mr-2" />
-              <h1 className="text-xl font-bold text-gray-900 leading-tight">
-                MAWADA <br />EXPORTECH
-              </h1>
-            </Link>
+            
+          <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+            <Globe className="h-6 w-6 text-blue-600 mr-2" />
+            <h1 className="text-xl font-bold text-gray-900 leading-tight">
+              MAWADA <br /> EXPORTECH
+            </h1>
+          </Link>
             
             <div className="flex items-center space-x-4">
               <button className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 relative">
@@ -254,7 +260,7 @@ export default function Dashboard() {
               
               <div className="flex items-center space-x-2 group relative">
                 <Image
-                  src="/assets/images/imex.jpg"
+                  src="/user/profile.jpg"
                   alt=""
                   width={32}
                   height={32}
@@ -286,7 +292,7 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* En-tête du dashboard */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">Tableau de bord </h2>
+          <h2 className="text-2xl font-bold text-gray-900">Tableau de bord de vos exportations</h2>
           <p className="text-gray-600">
             Suivi complet de vos opérations internationales
           </p>
@@ -384,7 +390,7 @@ export default function Dashboard() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Vos statistiques</CardTitle>
-                    <CardDescription>Import/Export des 6 derniers mois</CardDescription>
+                    <CardDescription>Vos Exportations des 6 derniers mois</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="h-64">
@@ -572,72 +578,60 @@ export default function Dashboard() {
 
               {/* Colonne de droite - Carte et détails */}
               <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Suivi géographique</CardTitle>
-                    <CardDescription>Localisation actuelle de votre dossier</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-64 rounded-lg overflow-hidden">
-                      <MapContainer
-                        center={currentStep.coordinates}
-                        zoom={6}
-                        scrollWheelZoom={false}
-                        style={{ height: "100%", width: "100%" }}
-                      >
-                        <TileLayer
-                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        />
-                        <Marker position={currentStep.coordinates}>
-                          <Popup>
-                            <div className="text-sm">
-                              <p className="font-semibold">{currentStep.label}</p>
-                              <p>{currentStep.location}</p>
-                              <p className="text-gray-500">{currentStep.date}</p>
-                            </div>
-                          </Popup>
-                        </Marker>
-                      </MapContainer>
-                    </div>
-                  </CardContent>
-                </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Suivi géographique</CardTitle>
+                  <CardDescription>Localisation actuelle de votre dossier</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64 rounded-lg overflow-hidden">
+                    {/* Carte dynamique sans SSR */}
+                    <MapWithNoSSR
+                      key={`${currentStep.coordinates[0]}-${currentStep.coordinates[1]}-${currentStep.label}`} // force le remount si le step change
+                      center={currentStep.coordinates}
+                      zoom={6}
+                      label={currentStep.label}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Détails financiers</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Coût de l'étape actuelle</span>
-                        <span className="font-medium">{currentStep.pricing}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Coût total estimé</span>
-                        <span className="font-medium">
-                          {stepDetails.reduce((acc, curr) => acc + parseInt(curr.pricing), 0)}€
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Détails financiers</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Coût de l'étape actuelle</span>
+                      <span className="font-medium">{currentStep.pricing}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Coût total estimé</span>
+                      <span className="font-medium">
+                        {stepDetails.reduce((acc, curr) => acc + parseInt(curr.pricing), 0)}€
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Montant déjà payé</span>
+                      <span className="font-medium">
+                        {stepDetails.slice(0, completedSteps).reduce((acc, curr) => acc + parseInt(curr.pricing), 0)}€
+                      </span>
+                    </div>
+                    <div className="border-t pt-3 mt-3">
+                      <div className="flex justify-between font-semibold">
+                        <span>Reste à payer</span>
+                        <span>
+                          {stepDetails.slice(completedSteps).reduce((acc, curr) => acc + parseInt(curr.pricing), 0)}€
                         </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Montant déjà payé</span>
-                        <span className="font-medium">
-                          {stepDetails.slice(0, completedSteps).reduce((acc, curr) => acc + parseInt(curr.pricing), 0)}€
-                        </span>
-                      </div>
-                      <div className="border-t pt-3 mt-3">
-                        <div className="flex justify-between font-semibold">
-                          <span>Reste à payer</span>
-                          <span>
-                            {stepDetails.slice(completedSteps).reduce((acc, curr) => acc + parseInt(curr.pricing), 0)}€
-                          </span>
-                        </div>
                       </div>
                     </div>
-                    <Button className="w-full mt-4">Payer maintenant</Button>
-                  </CardContent>
-                </Card>
-              </div>
+                  </div>
+                  <Button className="w-full mt-4">Payer maintenant</Button>
+                </CardContent>
+              </Card>
+      </div>
             </div>
           </TabsContent>
 

@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
+  transpilePackages: ['react-leaflet'],
   distDir: 'out',
   images: {
     unoptimized: true,
